@@ -1,0 +1,30 @@
+name: Generate and upload AppImage
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  build-and-upload-appimage:
+
+    runs-on: ubuntu-latest
+    
+    permissions:
+      contents: write
+      
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v3
+      - name: Build AppImage
+        uses: AppImageCrafters/build-appimage@v1 # It uses ubuntu bionic (18.04)
+        # uses: AppImageCrafters/build-appimage@master # It uses ubuntu focal (20.04)
+        with:
+          recipe: ./generate_appImage/AppImageBuilder_Github_Action.yml
+      - name: Upload Release Assets
+        uses: alexellis/upload-assets@0.3.0
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          asset_paths: '["*AppImage*"]'
+
+
