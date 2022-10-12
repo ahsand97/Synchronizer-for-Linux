@@ -1,0 +1,5 @@
+jsonschema==4.16.0
+watchdog==2.1.9
+mypy==0.971
+pycairo==1.21.0
+PyGObject==3.42.2
