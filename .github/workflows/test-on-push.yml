@@ -1,0 +1,24 @@
+name: Test on push
+
+on:
+  push:
+    branches: [master]
+
+jobs:
+  test-upload-release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v3
+      - name: Upload Release Assets
+        run: |
+          echo "ahsan nas"
+      #  uses: alexellis/upload-assets@0.3.0
+      #  env:
+      #    GITHUB_TOKEN: ${{ github.token }}
+      #  with:
+      #    asset_paths: '["*AppImage*"]'
+
+
