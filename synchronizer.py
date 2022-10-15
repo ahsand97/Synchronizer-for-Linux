@@ -1705,12 +1705,14 @@ class FolderObserver:
             self.target_location.external_path = self.target_location.base_path.joinpath(*new_parts)
 
         def on_moved(self, event: Union[we.DirMovedEvent, we.FileMovedEvent]) -> None:
-            if not self.include_hidden_files and any(
-                path.startswith(".") for path in self.source_location.internal_path.parts
-            ):
-                return
             info_textview: Dict[str, str] = {"Event": f"{'Folder' if event.is_directory else 'File'} movement"}
             try:
+                # Ignore hidden files if the option is disabled
+                if not self.include_hidden_files and any(
+                    path.startswith(".") for path in self.source_location.internal_path.parts
+                ):
+                    return
+
                 # Destination of movement in the source folder
                 internal_target_source: Path = Path(event.dest_path)
                 new_parts_source = internal_target_source.parts[len(self.source_location.base_path.resolve().parts) :]
@@ -1728,7 +1730,8 @@ class FolderObserver:
                 )
 
                 ## Event Replication
-                self.target_location.internal_path.rename(target=internal_target_target)
+                if self.target_location.internal_path.exists():
+                    self.target_location.internal_path.rename(target=internal_target_target)
 
                 info_textview.update({"Result": f"{'Folder' if event.is_directory else 'File'} moved correctly"})
             except Exception as e:
@@ -1740,12 +1743,14 @@ class FolderObserver:
                 self.emit_event_to_textview(info=info_textview)
 
         def on_created(self, event: Union[we.DirCreatedEvent, we.FileCreatedEvent]) -> None:
-            if not self.include_hidden_files and any(
-                path.startswith(".") for path in self.source_location.internal_path.parts
-            ):
-                return
             info_textview: Dict[str, str] = {"Event": f"{'Folder' if event.is_directory else 'File'} creation"}
             try:
+                # Ignore hidden files if the option is disabled
+                if not self.include_hidden_files and any(
+                    path.startswith(".") for path in self.source_location.internal_path.parts
+                ):
+                    return
+
                 info_textview.update(
                     {
                         "Source": str(self.source_location.external_path),
@@ -1754,10 +1759,11 @@ class FolderObserver:
                 )
 
                 ## Event Replication
-                if event.is_directory:
-                    self.target_location.internal_path.mkdir(exist_ok=True)
-                else:
-                    shutil.copy2(src=self.source_location.internal_path, dst=self.target_location.internal_path)
+                if self.source_location.internal_path.exists():
+                    if event.is_directory:
+                        self.target_location.internal_path.mkdir(exist_ok=True)
+                    else:
+                        shutil.copy2(src=self.source_location.internal_path, dst=self.target_location.internal_path)
 
                 info_textview.update({"Result": f"{'Folder' if event.is_directory else 'File'} created successfully"})
             except Exception as e:
@@ -1780,12 +1786,14 @@ class FolderObserver:
                         rmtree(folder=child)
                     folder.rmdir()
 
-            if not self.include_hidden_files and any(
-                path.startswith(".") for path in self.source_location.internal_path.parts
-            ):
-                return
             info_textview: Dict[str, str] = {"Event": f"{'Folder' if event.is_directory else 'File'} deletion"}
             try:
+                # Ignore hidden files if the option is disabled
+                if not self.include_hidden_files and any(
+                    path.startswith(".") for path in self.source_location.internal_path.parts
+                ):
+                    return
+
                 info_textview.update(
                     {
                         "Source": str(self.source_location.external_path),
@@ -1794,7 +1802,8 @@ class FolderObserver:
                 )
 
                 ## Event Replication
-                rmtree(folder=self.target_location.internal_path)
+                if self.target_location.internal_path.exists():
+                    rmtree(folder=self.target_location.internal_path)
 
                 info_textview.update({"Result": f"{'Folder' if event.is_directory else 'File'} deleted successfully"})
             except Exception as e:
@@ -1806,13 +1815,14 @@ class FolderObserver:
                 self.emit_event_to_textview(info=info_textview)
 
         def on_closed(self, event: we.FileClosedEvent) -> None:
-            if (
-                not self.include_hidden_files
-                and any(path.startswith(".") for path in self.source_location.internal_path.parts)
-            ) or self.source_location.internal_path.stat().st_size == 0:
-                return
             info_textview: Dict[str, str] = {"Event": "File edition"}
             try:
+                # Ignore hidden files if the option is disabled
+                if not self.include_hidden_files and any(
+                    path.startswith(".") for path in self.source_location.internal_path.parts
+                ):
+                    return
+
                 info_textview.update(
                     {
                         "Source": str(self.source_location.external_path),
@@ -1821,7 +1831,8 @@ class FolderObserver:
                 )
 
                 ## Event Replication
-                shutil.copy2(src=self.source_location.internal_path, dst=self.target_location.internal_path)
+                if self.source_location.internal_path.exists():
+                    shutil.copy2(src=self.source_location.internal_path, dst=self.target_location.internal_path)
 
                 info_textview.update({"Result": "File edited correctly"})
             except Exception as e:
