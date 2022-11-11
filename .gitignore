@@ -132,7 +132,5 @@ dmypy.json
 .vscode/
 
 # Misc
-**/generate_appImage/output/
-**/Comando generar appImage
-**/AppImageBuilder_Local.yml
-config.json
+generate_appImage/output/*
+synchronizer-for-linux-config.json

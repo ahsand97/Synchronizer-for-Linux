@@ -1,0 +1,8 @@
+Steps:
+1. Download docker image:
+    sudo docker pull appimagecrafters/appimage-builder:latest
+
+2. Open terminal on project folder "generate_appImage"
+
+3. Run command to generate the .AppImage file
+    mkdir output ; sudo docker run -it --rm -v "$(pwd)/output":/project -v "$(cd ../ && pwd)":/source appimagecrafters/appimage-builder /bin/bash -c "useradd -u $(id -u) $USER && cd /project && appimage-builder --recipe /source/generate_appImage/AppImageBuilder_Local.yml --skip-tests && chown -R $USER:$(id -u) /project"

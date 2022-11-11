@@ -30,9 +30,14 @@ class Application(Gtk.Application):
 
         # Paired Folders
         self.paired_folders_app: Dict[str, PairedFolder] = {}
+
+        # AppIndicator
         self._appindicator: Optional[AppIndicator] = None
+
+        # GUI
         self._gui: Optional[GUI] = None
         self._block_gui: bool = False
+
         self.setup_application()
 
     @property
@@ -55,7 +60,7 @@ class Application(Gtk.Application):
         if not config_file.is_file():
             return
 
-        # Reading from config.json file
+        # Reading from config file
         config_data: Dict[str, Dict[str, Dict[str, Union[str, Dict[str, Union[bool, int]]]]]] = {}
         with config_file.open(mode="r") as config_:
             try:
@@ -145,7 +150,7 @@ class Application(Gtk.Application):
 
     def start_app(self) -> None:
         """
-        Initializes the AppIndicator and the User Interface. Callbak of applications "activate" signal
+        Initializes the AppIndicator and the User Interface. Callbak of application's "activate" signal
         """
         if self._appindicator is None:
             self._appindicator = AppIndicator(application=self)
@@ -345,7 +350,7 @@ class Application(Gtk.Application):
         arg_types=[GObject.TYPE_STRING, GObject.TYPE_PYOBJECT],
     )
     def gui_show_info_text_view(self, tab_uuid: str, info_to_show: Dict[str, str]) -> None:
-        GLib.idle_add(lambda: self.gui._notebook.show_info_tab_textview(tab_uuid=tab_uuid, info=info_to_show))
+        self.gui._notebook.show_info_tab_textview(tab_uuid=tab_uuid, info=info_to_show)
 
     @GObject.Signal(  # type: ignore
         name="appindicator-add-paired-folder",
@@ -391,7 +396,7 @@ class GUI:
 
     class Tab:
         """
-        Class representing every tab of the interface
+        Class representing every tab of the user interface
         """
 
         def __init__(
@@ -674,8 +679,8 @@ class GUI:
                 if self.buffer_text_view.get_line_count() > self.paired_folder.buffer_size:
                     delete_lines_textview()
 
-            signal_id_textview_changed = self.buffer_text_view.connect(
-                "changed", lambda gtk_text_buffer: cb_textview_changed()
+            signal_id_textview_changed = self.buffer_text_view.connect_after(
+                "changed", lambda gtk_text_buffer: GLib.idle_add(cb_textview_changed)
             )
 
         def open_file_chooser_dialog(
@@ -823,77 +828,80 @@ class GUI:
             "start-sync-error" to show text related with errors when starting sync
             """
 
-            def write_common_info(title: str) -> None:
-                self.insert_text_with_tags(
-                    text=f"{title}\n\n", tags=[self.tags_buffer["title"], self.tags_buffer["centered"]]
-                )
-
-                self.insert_text_with_tags(text="SOURCE: ", tags=[self.tags_buffer["monospaced_bold"]])
-                self.insert_text_with_tags(
-                    text=f"{str(self.paired_folder.source)}\n", tags=[self.tags_buffer["monospaced"]]
-                )
-
-                self.insert_text_with_tags(text="TARGET: ", tags=[self.tags_buffer["monospaced_bold"]])
-                self.insert_text_with_tags(
-                    text=f"{str(self.paired_folder.target)}\n", tags=[self.tags_buffer["monospaced"]]
-                )
-
-            def get_current_time_format() -> str:
-                return f'[{datetime.datetime.now().strftime("%H:%M:%S")}]'
-
-            if mode == "read-config":
-                write_common_info(title="CONFIGURATION READ")
-
-                self.insert_text_with_tags(text=f"{get_current_time_format()} The configuration section ")
-                self.insert_text_with_tags(
-                    text=f'"{self.paired_folder._original_state["alias"]}"', tags=[self.tags_buffer["bold"]]
-                )
-                self.insert_text_with_tags(text=" has been read from the configuration file.\n\n")
-            elif mode == "save-config":
-                write_common_info(title="CONFIGURATION SAVED")
-
-                self.insert_text_with_tags(
-                    text=f"{get_current_time_format()} The configuration has been saved in the section "
-                )
-                self.insert_text_with_tags(
-                    text=f'"{self.paired_folder._original_state["alias"]}"', tags=[self.tags_buffer["bold"]]
-                )
-                self.insert_text_with_tags(text=" in the configuration file.\n\n")
-            elif mode == "delete-config":
-                self.insert_text_with_tags(
-                    text="CONFIGURATION DELETED\n\n", tags=[self.tags_buffer["title"], self.tags_buffer["centered"]]
-                )
-
-                self.insert_text_with_tags(text=f"{get_current_time_format()} The configuration section ")
-                self.insert_text_with_tags(
-                    text=f'"{self.paired_folder._original_state["alias"]}"', tags=[self.tags_buffer["bold"]]
-                )
-                self.insert_text_with_tags(text=" has been deleted from the configuration file.\n\n")
-            elif mode == "start-stop-sync":
-                if self.paired_folder._synchronization_status:
-                    write_common_info(title="SYNCHRONIZATION STARTED")
-
+            def main() -> None:
+                def write_common_info(title: str) -> None:
                     self.insert_text_with_tags(
-                        text=f"{get_current_time_format()} The synchronization has started, all the events reported on source are going to be replicated on target.\n\n"
+                        text=f"{title}\n\n", tags=[self.tags_buffer["title"], self.tags_buffer["centered"]]
                     )
-                else:
+
+                    self.insert_text_with_tags(text="SOURCE: ", tags=[self.tags_buffer["monospaced_bold"]])
                     self.insert_text_with_tags(
-                        text="SYNCHRONIZATION STOPPED\n\n",
+                        text=f"{str(self.paired_folder.source)}\n", tags=[self.tags_buffer["monospaced"]]
+                    )
+
+                    self.insert_text_with_tags(text="TARGET: ", tags=[self.tags_buffer["monospaced_bold"]])
+                    self.insert_text_with_tags(
+                        text=f"{str(self.paired_folder.target)}\n", tags=[self.tags_buffer["monospaced"]]
+                    )
+
+                def get_current_time_format() -> str:
+                    return f'[{datetime.datetime.now().strftime("%H:%M:%S")}]'
+
+                if mode == "read-config":
+                    write_common_info(title="CONFIGURATION READ")
+
+                    self.insert_text_with_tags(text=f"{get_current_time_format()} The configuration section ")
+                    self.insert_text_with_tags(
+                        text=f'"{self.paired_folder._original_state["alias"]}"', tags=[self.tags_buffer["bold"]]
+                    )
+                    self.insert_text_with_tags(text=" has been read from the configuration file.\n\n")
+                elif mode == "save-config":
+                    write_common_info(title="CONFIGURATION SAVED")
+
+                    self.insert_text_with_tags(
+                        text=f"{get_current_time_format()} The configuration has been saved in the section "
+                    )
+                    self.insert_text_with_tags(
+                        text=f'"{self.paired_folder._original_state["alias"]}"', tags=[self.tags_buffer["bold"]]
+                    )
+                    self.insert_text_with_tags(text=" in the configuration file.\n\n")
+                elif mode == "delete-config":
+                    self.insert_text_with_tags(
+                        text="CONFIGURATION DELETED\n\n", tags=[self.tags_buffer["title"], self.tags_buffer["centered"]]
+                    )
+
+                    self.insert_text_with_tags(text=f"{get_current_time_format()} The configuration section ")
+                    self.insert_text_with_tags(
+                        text=f'"{self.paired_folder._original_state["alias"]}"', tags=[self.tags_buffer["bold"]]
+                    )
+                    self.insert_text_with_tags(text=" has been deleted from the configuration file.\n\n")
+                elif mode == "start-stop-sync":
+                    if self.paired_folder._synchronization_status:
+                        write_common_info(title="SYNCHRONIZATION STARTED")
+
+                        self.insert_text_with_tags(
+                            text=f"{get_current_time_format()} The synchronization has started, all the events reported on source are going to be replicated on target.\n\n"
+                        )
+                    else:
+                        self.insert_text_with_tags(
+                            text="SYNCHRONIZATION STOPPED\n\n",
+                            tags=[self.tags_buffer["title"], self.tags_buffer["centered"]],
+                        )
+
+                        self.insert_text_with_tags(
+                            text=f"{get_current_time_format()} The synchronization has been stopped.\n\n"
+                        )
+                elif mode == "start-sync-error":
+                    self.insert_text_with_tags(
+                        text="SYNCHRONIZATION COULD NOT BE STARTED\n\n",
                         tags=[self.tags_buffer["title"], self.tags_buffer["centered"]],
                     )
 
                     self.insert_text_with_tags(
-                        text=f"{get_current_time_format()} The synchronization has been stopped.\n\n"
+                        text=f"{get_current_time_format()} The synchronization could not be started, the source location is not valid.\n\n"
                     )
-            elif mode == "start-sync-error":
-                self.insert_text_with_tags(
-                    text="SYNCHRONIZATION COULD NOT BE STARTED\n\n",
-                    tags=[self.tags_buffer["title"], self.tags_buffer["centered"]],
-                )
 
-                self.insert_text_with_tags(
-                    text=f"{get_current_time_format()} The synchronization could not be started, the source location is not valid.\n\n"
-                )
+            GLib.idle_add(main)
 
         @no_type_check
         def insert_text_with_tags(self, text: str, tags: Optional[List[Gtk.TextTag]] = None) -> None:
@@ -1104,16 +1112,20 @@ class GUI:
             """
             Show information about an event and its replication
             """
-            self.insert_text_with_tags(
-                text=f'{datetime.datetime.now().strftime("%d/%m/%Y - %I:%M:%S %p")}\n',
-                tags=[self.tags_buffer["monospaced_bold"]],
-            )
-            for key, value in info.items():
-                self.insert_text_with_tags(text=f"{key}: ", tags=[self.tags_buffer["monospaced_bold"]])
+
+            def main() -> None:
                 self.insert_text_with_tags(
-                    text=f"{' ' if key == 'Event' else ''}{value}\n", tags=[self.tags_buffer["monospaced"]]
+                    text=f'{datetime.datetime.now().strftime("%d/%m/%Y - %I:%M:%S %p")}\n',
+                    tags=[self.tags_buffer["monospaced_bold"]],
                 )
-            self.insert_text_with_tags(text="\n")
+                for key, value in info.items():
+                    self.insert_text_with_tags(text=f"{key}: ", tags=[self.tags_buffer["monospaced_bold"]])
+                    self.insert_text_with_tags(
+                        text=f"{' ' if key == 'Event' else ''}{value}\n", tags=[self.tags_buffer["monospaced"]]
+                    )
+                self.insert_text_with_tags(text="\n")
+
+            GLib.idle_add(main)
 
     class Notebook:
         """
@@ -1845,6 +1857,14 @@ class FolderObserver:
             """
             Emit signal to the app to show info on textview
             """
+            mandatory_keys = ["Event", "Source", "Target", "Result"]
+            valid_info = True
+            for mandatory_key in mandatory_keys:
+                if mandatory_key not in info:
+                    valid_info = False
+                    break
+            if not valid_info:
+                return
             self._folder_observer.application.emit(
                 "gui-show-info-textview", self._folder_observer.uuid_paired_folder, info
             )
@@ -1879,9 +1899,9 @@ ui_content: str = ""
 
 # Config file
 config_file: Path = (
-    Path(os.environ["APPIMAGE"]).parent.joinpath("config.json")
+    Path(os.environ["APPIMAGE"]).parent.joinpath("synchronizer-for-linux-config.json")
     if "APPIMAGE" in os.environ
-    else Path.cwd().joinpath("config.json")
+    else Path.cwd().joinpath("synchronizer-for-linux-config.json")
 )
 
 # Constants

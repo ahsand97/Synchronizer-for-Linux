@@ -20,11 +20,9 @@ jobs:
         # uses: AppImageCrafters/build-appimage@master # It uses ubuntu focal (20.04)
         with:
           recipe: ./generate_appImage/AppImageBuilder_Github_Action.yml
-      - name: Upload Release Assets
-        uses: alexellis/upload-assets@0.3.0
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
+      - name: Upload assets to release
+        uses: ahsand97/upload-assets-to-release-with-go@v0.1.0
         with:
-          asset_paths: '["*AppImage*"]'
+          files: '["*AppImage*"]'
 
 

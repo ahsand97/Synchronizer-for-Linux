@@ -1,11 +1,10 @@
-**Synchronizer for Linux**
+**********************
+Synchronizer for Linux
+**********************
 
 Synchronizer for Linux is a python3 application that allows you to keep multiple pairs of folders synchronized. Events reported on source folders are replicated on target folder.
 
 .. image:: https://user-images.githubusercontent.com/32344641/194986551-d8ecc14e-9cbf-4dca-89c9-3a0ec0a88b6f.png
-
-.. image:: https://user-images.githubusercontent.com/32344641/194987463-fe4bbe95-439a-4b5e-84df-62140ec6468e.png
-  :width: 700
 
 Events reported
 ---------------
@@ -32,7 +31,7 @@ Usage
 From source
 '''''''''''
 
-::
+.. code:: bash
 
    git clone https://github.com/ahsand97/Synchronizer-for-Linux.git
    cd Synchronizer-for-Linux
@@ -42,7 +41,7 @@ From source
 AppImage
 ''''''''
 
-An AppImage is provided to use the application. You can download it from the `releases <https://github.com/ahsand97/Synchronizer-for-Linux/releases>`_, just give it execution permissions and execute it.
+An AppImage is provided to use the application. You can download it from the `releases <https://github.com/ahsand97/Synchronizer-for-Linux/releases>`_.
 
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------
 
